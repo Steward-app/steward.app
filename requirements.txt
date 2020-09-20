@@ -1,17 +1,9 @@
-# both
 googleapis-common-protos
 absl-py
 protobuf
 grpcio
 sentry-sdk[flask]
 
-# registry
-grpcio-tools
-grpcio-reflection
-pymongo
-python-grpc-prometheus
-
-# web
 WTForms
 WTForms-ParsleyJS
 Flask-WTF
