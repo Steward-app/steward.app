@@ -5,7 +5,6 @@ FE_PORT = 5000
 all: dependencies app run
 
 run:
-	export FLASK_APP=app.app
 	flask run -h 0.0.0.0
 
 .PHONY: app clean run run_monolithic
