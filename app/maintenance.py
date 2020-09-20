@@ -3,10 +3,10 @@ from flask import Blueprint, render_template, flash, redirect, request
 from flask_login import login_required, current_user
 
 import grpc
-from steward import registry_pb2_grpc
-from steward import maintenance_pb2 as m
-from steward import asset_pb2 as a
-from steward import schedule_pb2 as s
+from proto.steward import registry_pb2_grpc
+from proto.steward import maintenance_pb2 as m
+from proto.steward import asset_pb2 as a
+from proto.steward import schedule_pb2 as s
 
 from app.forms import MaintenanceForm, DeleteForm
 from app import channels

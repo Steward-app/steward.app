@@ -12,8 +12,8 @@ from app.extensions import lm, mail, bcrypt
 from app import util, channels
 
 import grpc
-from steward import registry_pb2_grpc
-from steward import user_pb2 as u
+from proto.steward import registry_pb2_grpc
+from proto.steward import user_pb2 as u
 
 
 bp = Blueprint("user", __name__)

@@ -2,21 +2,23 @@
 NODE_MODULES = static/node_modules
 FE_PORT = 5000
 
-dependencies:
-	sudo pip3 install -r requirements.txt
-
-.PHONY: app clean run run_monolithic
-app:
-	cd app; yarn install --modules-folder $(NODE_MODULES)
-	cd app; FLASK_APP=__init__.py flask assets build
-
-
-clean:
-	rm  -rf app/$(NODE_MODULES)
+all: dependencies app run
 
 run:
 	export FLASK_APP=app.app
 	flask run -h 0.0.0.0
+
+.PHONY: app clean run run_monolithic
+
+dependencies:
+	python3 -m pip install -r requirements.txt
+
+app:
+	cd app; yarn install --modules-folder $(NODE_MODULES)
+	cd app; FLASK_APP=__init__.py flask assets build
+
+clean:
+	rm  -rf app/$(NODE_MODULES)
 
 run_monolithic:
 	python3 -c 'from app import app; app.run(host="0.0.0.0", load_dotenv=False, port=$(FE_PORT))'

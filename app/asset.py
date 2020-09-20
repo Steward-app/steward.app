@@ -9,8 +9,8 @@ from flask import Blueprint, render_template, flash, redirect, request
 from flask_login import login_required
 
 import grpc
-from steward import registry_pb2_grpc
-from steward import asset_pb2 as a
+from proto.steward import registry_pb2_grpc
+from proto.steward import asset_pb2 as a
 
 from app.forms import AssetForm, DeleteForm
 from app import channels
