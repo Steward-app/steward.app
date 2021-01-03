@@ -1,8 +1,8 @@
 # You can set these variables from the command line.
 NODE_MODULES = static/node_modules
-FE_PORT = 5000
+FE_PORT = 50049
 
-all: dependencies app run
+all: dependencies app run_monolithic
 
 run:
 	flask run -h 0.0.0.0
