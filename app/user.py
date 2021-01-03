@@ -109,7 +109,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
-        if bcrypt.check_password_hash(target_user.password, form.password.data):
+        if target_user.password and bcrypt.check_password_hash(target_user.password, form.password.data):
             user = WrappedUser()
             user.load(target_user)
             login_user(user)
