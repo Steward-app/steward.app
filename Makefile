@@ -4,8 +4,8 @@ FE_PORT = 50049
 
 all: dependencies app run_monolithic
 
-run:
-	flask run -h 0.0.0.0
+run_dev:
+	python3 -c 'from app import app; app.run(host="0.0.0.0", port=$(FE_PORT))' --flagfile=dev.flags
 
 .PHONY: app clean run run_monolithic
 
@@ -20,4 +20,4 @@ clean:
 	rm  -rf app/$(NODE_MODULES)
 
 run_monolithic:
-	python3 -c 'from app import app; app.run(host="0.0.0.0", load_dotenv=False, port=$(FE_PORT))'
+	python3 -c 'from app import app; app.run(host="0.0.0.0", port=$(FE_PORT))'

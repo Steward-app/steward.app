@@ -15,12 +15,15 @@ bp = Blueprint("maintenance", __name__)
 
 logging.set_verbosity(logging.INFO)
 
-maintenance_channel = grpc.insecure_channel(channels.MAINTENANCE_ENDPOINT)
-asset_channel = grpc.insecure_channel(channels.ASSET_ENDPOINT)
-schedule_channel = grpc.insecure_channel(channels.SCHEDULE_ENDPOINT)
+maintenance_channel = grpc.insecure_channel(channels.maintenance)
+asset_channel = grpc.insecure_channel(channels.asset)
+schedule_channel = grpc.insecure_channel(channels.schedule)
 maintenances = registry_pb2_grpc.MaintenanceServiceStub(maintenance_channel)
 assets = registry_pb2_grpc.AssetServiceStub(asset_channel)
 schedules = registry_pb2_grpc.ScheduleServiceStub(schedule_channel)
+logging.info('Route({name}) channel(maintenance): {channel}'.format(name=__name__, channel=channels.maintenance))
+logging.info('Route({name}) channel(asset): {channel}'.format(name=__name__, channel=channels.asset))
+logging.info('Route({name}) channel(schedule): {channel}'.format(name=__name__, channel=channels.schedule))
 
 @bp.route('/maintenances')
 @login_required
