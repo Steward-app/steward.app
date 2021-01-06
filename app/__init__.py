@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__version__ = "0.0.4"
+__version__ = "0.0.5"
 
 import sys
 from absl import logging, flags
@@ -45,7 +45,6 @@ def load(env):
         )
 
     global channels
-    print(FLAGS.flags_into_string())
     channels = Channels()
     channels.resolve_all(env=env)
 

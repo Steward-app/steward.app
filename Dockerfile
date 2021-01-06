@@ -6,4 +6,4 @@ ADD . /app/
 
 RUN pip install -r requirements.txt
 
-CMD gunicorn -b  "0.0.0.0:$PORT" "app:load('$ENV')" -- --flagfile=prod.flags
+CMD gunicorn -b  "0.0.0.0:$PORT" "app:load("$ENV")" -- --flagfile=prod.flags
