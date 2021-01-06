@@ -3,16 +3,21 @@ from dns import resolver
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_bool('consul', False, 'Enable Consul service disovery')
+flags.DEFINE_string('consul', None, 'Define ip address to enable Consul service disovery. A hostname will not work.')
+flags.DEFINE_integer('consul_port', 8600, 'Consul port')
+flags.DEFINE_string('consul_service', 'steward-registry', 'Consul service')
+flags.DEFINE_string('monolithic_host', 'localhost', 'Host to use for monolithic deployments')
+flags.DEFINE_integer('monolithic_port', 50050, 'Port to use for monolithic deployments')
 
 class Channels():
     def __init__(self):
         if FLAGS.consul:
             self.resolver = resolver.Resolver()
-            self.resolver.port = 8600
-            self.resolver.nameservers = ["127.0.0.1"]
+            self.resolver.port = FLAGS.consul_port
+            self.resolver.nameservers = [FLAGS.consul]
+            logging.info('Using Consul host: {host}'.format(host=FLAGS.consul))
         else:
-            self.monolithic = 'localhost:50050'
+            self.monolithic = '{host}:{port}'.format(host=FLAGS.monolithic_host, port=FLAGS.monolithic_port)
             self.user = self.monolithic
             self.maintenance = self.monolithic
             self.asset = self.monolithic
@@ -21,15 +26,15 @@ class Channels():
 
     def resolve(self, tag):
         if FLAGS.consul:
-            address = '{tag}.steward-registry.service.consul.'.format(tag=tag)
+            address = '{tag}.{service}.service.consul.'.format(tag=tag, service=FLAGS.consul_service)
             srv = self.resolver.query(address, 'SRV')[0]
             ip = self.resolver.query(srv.target, 'A')[0]
             return '{host}:{port}'.format(host=ip, port=srv.port)
         else:
             return self.monolithic
     
-    def resolve_all(self):
-        if FLAGS.consul:
+    def resolve_all(self, consul=False):
+        if FLAGS.consul or consul:
             self.user = self.resolve('registry.user')
             self.maintenance = self.resolve('registry.maintenance')
             self.asset = self.resolve('registry.asset')

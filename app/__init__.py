@@ -16,30 +16,58 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('sentry', None, 'Sentry endpoint')
-FLAGS(sys.argv)
+flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
 
-app = Flask(__name__)
-app.config.from_object('websiteconfig')
 
-if FLAGS.sentry:
-    sentry_sdk.init(
-        dsn=FLAGS.sentry,
-        integrations=[FlaskIntegration()]
-    )
+# init channel resolutions in the global scope so they're available everywhere
+channels = None
 
-assets.init_app(app)
-lm.init_app(app)
-mail.init_app(app)
-bcrypt.init_app(app)
+# This loader can be run with a wsgi runner and still receive an argument
+def load(env):
+    # Flag parsing with wsgi runners is a major pain
+    # We identify a flag break '--' and consume only flags after it
+    if env == 'prod':
+        if '--' in sys.argv:
+            separator = sys.argv.index('--')
+            args=sys.argv[separator:]
+            logging.error('Prod mode, loading args the hard way: {args}'.format(args=args))
+        else:
+            args=sys.argv
+        FLAGS(args)
+    else:
+        FLAGS(sys.argv)
 
-channels = Channels()
-channels.resolve_all()
+    # Init sentry as early as possible to catch as much as possible
+    if FLAGS.sentry:
+        sentry_sdk.init(
+            dsn=FLAGS.sentry,
+            integrations=[FlaskIntegration()]
+        )
 
-from app import user, maintenance, asset
-app.register_blueprint(user.bp)
-app.register_blueprint(maintenance.bp)
-app.register_blueprint(asset.bp)
+    global channels
+    print(FLAGS.flags_into_string())
+    if FLAGS.consul:
+        logging.error('Channels resolving with Consul')
+    channels = Channels()
+    channels.resolve_all()
 
-@app.route('/')
-def root():
-    return render_template('index.html')
+    app = Flask(__name__)
+    app.config.from_object('websiteconfig')
+
+    assets.init_app(app)
+    lm.init_app(app)
+    mail.init_app(app)
+    bcrypt.init_app(app)
+
+
+    from app import user, maintenance, asset
+    app.register_blueprint(user.bp)
+    app.register_blueprint(maintenance.bp)
+    app.register_blueprint(asset.bp)
+
+    @app.route('/')
+    def root():
+        return render_template('index.html')
+
+    return app
+
