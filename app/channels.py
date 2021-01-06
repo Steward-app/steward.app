@@ -39,7 +39,8 @@ class Channels():
             self.maintenance = self.resolve('registry.maintenance.{env}'.format(env=env))
             self.asset = self.resolve('registry.asset.{env}'.format(env=env))
             self.schedule = self.resolve('registry.schedule.{env}'.format(env=env))
-        logging.info('Resolved channels:\n user_server: {user}\n maintenance_server: {maintenance}\n asset_server: {asset}\n schedule_server: {schedule}'.format(
+        logging.info('Resolved channels (env={env}):\n user_server: {user}\n maintenance_server: {maintenance}\n asset_server: {asset}\n schedule_server: {schedule}'.format(
+            env=env,
             user=self.user,
             maintenance=self.maintenance,
             asset=self.asset,
