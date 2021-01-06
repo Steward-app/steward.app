@@ -26,11 +26,11 @@ channels = None
 def load(env):
     # Flag parsing with wsgi runners is a major pain
     # We identify a flag break '--' and consume only flags after it
-    if env == 'prod':
+    if env != 'dev':
         if '--' in sys.argv:
             separator = sys.argv.index('--')
             args=sys.argv[separator:]
-            logging.error('Prod mode, loading args the hard way: {args}'.format(args=args))
+            logging.debug('Prod mode, loading args the hard way: {args}'.format(args=args))
         else:
             args=sys.argv
         FLAGS(args)
@@ -46,10 +46,8 @@ def load(env):
 
     global channels
     print(FLAGS.flags_into_string())
-    if FLAGS.consul:
-        logging.error('Channels resolving with Consul')
     channels = Channels()
-    channels.resolve_all()
+    channels.resolve_all(env=env)
 
     app = Flask(__name__)
     app.config.from_object('websiteconfig')
