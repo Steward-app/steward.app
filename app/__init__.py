@@ -46,7 +46,7 @@ def load(env):
 
     global channels
     channels = Channels()
-    channels.resolve_all(env=env)
+    channels.resolve_all()
 
     app = Flask(__name__)
     app.config.from_object('websiteconfig')

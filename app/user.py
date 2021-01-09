@@ -110,12 +110,23 @@ def load_user(user_id):
 
 class WrappedUser(UserMixin):
     def __init__(self, user_id=None):
+        # Need to modify stub if we've lost the connection
+        global users
         if user_id:
             logging.debug('user created by id: {user_id}'.format(user_id=user_id))
             try:
                 self.user = users.GetUser(u.User(_id=user_id))
             except grpc._channel._InactiveRpcError as e:
-                logging.fatal('Instance had a stale channel: {channel}'.format(channel = channels.user))
+                logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.user))
+                global channel
+                channels.resolve_all()
+                channel = grpc.insecure_channel(channels.user)
+                users = registry_pb2_grpc.UserServiceStub(channel)
+                try:
+                    self.user = users.GetUser(u.User(_id=user_id))
+                except grpc._channel._InactiveRpcError as e:
+                    logging.error('Still had a stale channel, burning the house down')
+                    shutdown_server()
         else:
             logging.debug('LazyLoading user')
             self.user = 'noneuser'
