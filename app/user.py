@@ -112,7 +112,10 @@ class WrappedUser(UserMixin):
     def __init__(self, user_id=None):
         if user_id:
             logging.debug('user created by id: {user_id}'.format(user_id=user_id))
-            self.user = users.GetUser(u.User(_id=user_id))
+            try:
+                self.user = users.GetUser(u.User(_id=user_id))
+            except grpc._channel._InactiveRpcError as e:
+                logging.fatal('Instance had a stale channel: {channel}'.format(channel = channels.user))
         else:
             logging.debug('LazyLoading user')
             self.user = 'noneuser'
