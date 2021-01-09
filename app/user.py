@@ -22,39 +22,10 @@ channel = grpc.insecure_channel(channels.user)
 users = registry_pb2_grpc.UserServiceStub(channel)
 logging.info('Route({name}) channel: {channel}'.format(name=__name__, channel=channels.user))
 
-@bp.route('/users')
-@login_required
-def user_list():
-    return render_template('users.html', users=users.ListUsers(u.ListUsersRequest()))
-
 @bp.route('/user/profile')
 @login_required
 def user_profile():
     return render_template('profile.html')
-
-@bp.route('/user/delete/<user_id>', methods=['GET', 'POST'])
-@login_required
-def user_delete(user_id=None):
-    form = DeleteForm()
-    user = users.GetUser(u.GetUserRequest(_id=user_id))
-
-    if form.validate_on_submit():
-        deleted = users.DeleteUser(u.DeleteUserRequest(_id=user_id))
-        if deleted and deleted.name and not deleted._id:
-            flash('User deleted: {}'.format(deleted.name))
-            return redirect('/users')
-        else:
-            flash('Failed to delete user: {}'.format(deleted))
-            logging.error('Failed to delete user: {}'.format(deleted))
-            user = 'error'
-            return render_template('delete.html', form=form, view='delete', obj_type='User', obj=None, name='deleted?')
-    return render_template('delete.html', form=form, view='delete', obj_type='User', obj=user, name=user.name)
-
-
-@bp.route('/user/<user_id>')
-@login_required
-def user(user_id=None):
-    return render_template('user.html', user=users.GetUser(u.GetUserRequest(_id=user_id)))
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
