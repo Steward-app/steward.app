@@ -18,9 +18,7 @@ from proto.steward import user_pb2 as u
 
 bp = Blueprint("user", __name__)
 logging.set_verbosity(logging.INFO)
-channel = grpc.insecure_channel(channels.user)
-users = registry_pb2_grpc.UserServiceStub(channel)
-logging.info('Route({name}) channel: {channel}'.format(name=__name__, channel=channels.user))
+users = channels.channel.user
 
 @bp.route('/user/profile')
 @login_required

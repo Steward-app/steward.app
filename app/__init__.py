@@ -40,13 +40,15 @@ def load(env):
     # Init sentry as early as possible to catch as much as possible
     if FLAGS.sentry:
         sentry_sdk.init(
-            dsn=FLAGS.sentry,
-            integrations=[FlaskIntegration()]
+            dsn = FLAGS.sentry,
+            integrations = [ FlaskIntegration() ],
+            environment = env,
+            release = __version__
         )
 
     global channels
     channels = Channels()
-    channels.resolve_all()
+    channels.refresh_all()
 
     app = Flask(__name__)
     app.config.from_object('websiteconfig')

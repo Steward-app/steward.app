@@ -19,9 +19,7 @@ bp = Blueprint("asset", __name__)
 
 logging.set_verbosity(logging.INFO)
 
-channel = grpc.insecure_channel(channels.asset)
-assets = registry_pb2_grpc.AssetServiceStub(channel)
-logging.info('Route({name}) channel: {channel}'.format(name=__name__, channel=channels.asset))
+assets = channels.channel.asset
 
 @bp.route('/assets')
 @login_required

@@ -1,5 +1,9 @@
 from absl import logging, flags
 from dns import resolver
+from box import Box
+import grpc
+
+from proto.steward import registry_pb2_grpc
 
 FLAGS = flags.FLAGS
 
@@ -9,39 +13,52 @@ flags.DEFINE_string('consul_service', 'steward-registry', 'Consul service')
 flags.DEFINE_string('monolithic_host', 'localhost', 'Host to use for monolithic deployments')
 flags.DEFINE_integer('monolithic_port', 50050, 'Port to use for monolithic deployments')
 
+services = {
+        'user': registry_pb2_grpc.UserServiceStub,
+        'asset': registry_pb2_grpc.AssetServiceStub,
+        'maintenance': registry_pb2_grpc.MaintenanceServiceStub,
+        'schedule': registry_pb2_grpc.ScheduleServiceStub
+        }
+
 class Channels():
     def __init__(self):
+        # not auto filled in, call refresh() or refresh_all()
+        self.uri = Box()
+        self.channel = Box()
         if FLAGS.consul:
+            logging.info('Using Consul host: {host}'.format(host=FLAGS.consul))
             self.resolver = resolver.Resolver()
             self.resolver.port = FLAGS.consul_port
             self.resolver.nameservers = [FLAGS.consul]
-            logging.info('Using Consul host: {host}'.format(host=FLAGS.consul))
         else:
-            self.monolithic = '{host}:{port}'.format(host=FLAGS.monolithic_host, port=FLAGS.monolithic_port)
-            self.user = self.monolithic
-            self.maintenance = self.monolithic
-            self.asset = self.monolithic
-            self.schedule = self.monolithic
+            for service, stub in services.items():
+                self.uri[service] = monolithic_uri
+                self.channel[service] = self._get_channel(service, stub)
 
-
-    def resolve(self, tag):
+    def refresh(self, service):
         if FLAGS.consul:
-            address = '{tag}.{service}.service.consul.'.format(tag=tag, service=FLAGS.consul_service)
+            self.uri[service] = self._resolve(service)
+            stub = services[service]
+            self.channel[service] = self._get_channel(service, stub)
+            logging.info('Resolved service {tag} to {uri}'.format(
+                tag = service,
+                uri = self.uri[service]
+            ))
+
+    def refresh_all(self):
+        if FLAGS.consul:
+            for service in services:
+                self.refresh(service)
+    
+    def _resolve(self, tag):
+        if FLAGS.consul:
+            address = 'registry.{tag}.{service}.service.consul.'.format(tag=tag, service=FLAGS.consul_service)
             srv = self.resolver.query(address, 'SRV')[0]
             ip = self.resolver.query(srv.target, 'A')[0]
             return '{host}:{port}'.format(host=ip, port=srv.port)
         else:
             return self.monolithic
-    
-    def resolve_all(self):
-        if FLAGS.consul:
-            self.user = self.resolve('registry.user')
-            self.maintenance = self.resolve('registry.maintenance')
-            self.asset = self.resolve('registry.asset')
-            self.schedule = self.resolve('registry.schedule')
-        logging.info('Resolved channels:\n user_server: {user}\n maintenance_server: {maintenance}\n asset_server: {asset}\n schedule_server: {schedule}'.format(
-            user=self.user,
-            maintenance=self.maintenance,
-            asset=self.asset,
-            schedule=self.schedule
-        ))
+
+    def _get_channel(self, service, stub):
+        channel = grpc.insecure_channel(self.uri[service])
+        return stub(channel)
