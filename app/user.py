@@ -88,8 +88,16 @@ def login():
             next = util.get_redirect_target()
             return redirect(next)
         else:
-            logging.info('email login fail: {}'.format(target_user.email))
-            flash('Incorrect password')
+            if target_user.email == form.email.data:
+                sign = '=='
+            else:
+                sign = '!='
+            logging.info('email login fail: "{target} {sign} {form}'.format(
+                target = target_user.email,
+                form = form.email.data,
+                sign = sign
+                ))
+            flash('Incorrect login details')
     return render_template('login.html', form=form)
 
 @bp.route('/logout')
