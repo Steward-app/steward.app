@@ -3,6 +3,10 @@ from wtforms import SubmitField
 from wtformsparsleyjs import StringField, PasswordField, BooleanField, SelectField, DateField
 from wtforms import validators
 
+PASSWORD_MINLEN = str(8)
+PASSWORD_MAXLEN = str(255)
+PASSWORD_CHARS = '!@#$%^&*()<>=+.,-_?/;:'
+
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[validators.DataRequired()])
     password = PasswordField('Password', validators=[validators.DataRequired()])
@@ -18,7 +22,12 @@ class UserForm(FlaskForm):
     old_password = PasswordField('Current Password', validators=[validators.DataRequired()])
     password = PasswordField('Password', validators=[
         validators.DataRequired(),
-        validators.Regexp('^(?=.*[0-9]+.*)(?=.*[a-zA-Z]+.*)[0-9a-zA-Z!@#$%^&*]{12,72}$', message='Password must contain at least one letter, at least one number, and be longer than 12 charaters.')
+        validators.Regexp(
+            '^(?=.*[0-9]+.*)(?=.*[a-zA-Z]+.*)[0-9a-zA-Z' + PASSWORD_CHARS + ']{' + PASSWORD_MINLEN + ',' + PASSWORD_MAXLEN + '}$',
+            message='Allowed characters: [0-9, a-z, A-Z, {chars}] Password must contain at least one letter, at least one number, and be at least {minlen} charaters long.'.format(
+                minlen=PASSWORD_MINLEN,
+                chars=PASSWORD_CHARS
+                ))
         ])
     password_repeat = PasswordField('Password again', validators=[
         validators.DataRequired(),

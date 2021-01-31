@@ -37,7 +37,10 @@ def register():
         flash('User Created for {}'.format(form.email.data))
         return redirect('/login')
     if form.errors:
-        logging.info('register failed: {}'.format(form.errors))
+        logging.info('register failed for "{email}": {error}'.format(
+            email = form.email.data,
+            error = form.errors
+            ))
         flash('register failed: {}'.format(form.errors))
 
     return render_template('user_edit.html', form=form, view='Register')
@@ -92,7 +95,7 @@ def login():
                 sign = '=='
             else:
                 sign = '!='
-            logging.info('email login fail: "{target} {sign} {form}'.format(
+            logging.info('email login fail: "{target}" {sign} "{form}"'.format(
                 target = target_user.email,
                 form = form.email.data,
                 sign = sign
