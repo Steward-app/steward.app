@@ -126,7 +126,7 @@ class WrappedUser(UserMixin):
             try:
                 self.user = users.GetUser(u.User(_id=user_id))
             except grpc._channel._InactiveRpcError as e:
-                logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.user))
+                logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
                 global channel
                 channels.resolve_all()
                 channel = grpc.insecure_channel(channels.user)
