@@ -30,6 +30,7 @@ class MaintenanceForm(FlaskForm):
     name = StringField('Name', validators=[validators.DataRequired()])
     description = StringField('Description')
     asset = SelectField('Asset')
+    schedule_multiplier = StringField('Schedule count')
     schedule = SelectField('Schedule')
     enabled = BooleanField('Enabled')
     submit = SubmitField()
