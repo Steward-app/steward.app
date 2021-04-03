@@ -1,17 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
+  {% block metas %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Maintly.app" />
+  <link rel="manifest" href="{{ static_url_for('static', filename='manifest.json') }}"/>
+  {% endblock %}
   {% block head %}
   <title>{%block title %}{% endblock %} - Steward</title>
   {% endblock %}
-  {% assets "js_all" -%}
-      <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-  {%- endassets %}
-  {% assets "css_all" -%}
-      <link rel="stylesheet" href="{{ ASSET_URL }}">
-  {%- endassets %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
 </head>
 <body>
   <header>
@@ -47,7 +46,7 @@
     {% endblock %}
   </div>
   {% block blockscripts %}
-  <script>$('form').parsley({ successClass: 'is-valid', errorClass: 'is-invalid'});</script>
+  <script type="text/javascript" src="{{ static_url_for('static', filename='app.js') }}"></script>
   {% endblock %}
 </body>
 </html>

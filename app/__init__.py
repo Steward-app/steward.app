@@ -4,10 +4,9 @@ __version__ = "0.1.4"
 
 import sys
 from absl import logging, flags
-from flask import Flask, render_template, flash, redirect, request
+from flask import Flask, render_template, flash, redirect, request, send_from_directory
 
-from app.app_assets import assets
-from app.extensions import lm, mail, bcrypt
+from app.extensions import lm, mail, bcrypt, flask_static_digest
 
 from app.channels import Channels
 
@@ -53,20 +52,26 @@ def load(env):
     app = Flask(__name__)
     app.config.from_object('websiteconfig')
 
-    assets.init_app(app)
     lm.init_app(app)
     mail.init_app(app)
     bcrypt.init_app(app)
+    flask_static_digest.init_app(app)
 
 
-    from app import user, maintenance, asset
+    from app import user, maintenance, asset, pwa
     app.register_blueprint(user.bp)
     app.register_blueprint(maintenance.bp)
     app.register_blueprint(asset.bp)
+    app.register_blueprint(pwa.bp)
 
     @app.route('/')
     def root():
         return render_template('index.html')
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory('static', 'img/icons/favicon.ico')
+
 
     return app
 

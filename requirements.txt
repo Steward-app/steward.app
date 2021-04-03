@@ -8,10 +8,10 @@ python-box[all]
 WTForms
 WTForms-ParsleyJS
 Flask-WTF
-Flask-Assets
 Flask-Login
 Flask-Bcrypt
 Flask-Mail
+Flask-Static-Digest
 Flask-Travis
 jsmin
 gunicorn
