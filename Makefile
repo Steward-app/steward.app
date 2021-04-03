@@ -11,7 +11,7 @@ dependencies:
 
 app:
 	cd app; yarn install --modules-folder $(NODE_MODULES)
-	cd app; FLASK_APP=__init__.py flask assets build
+	FLASK_APP=app:load flask assets build
 
 clean:
 	rm  -rf app/$(NODE_MODULES)

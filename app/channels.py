@@ -32,7 +32,7 @@ class Channels():
             self.resolver.nameservers = [FLAGS.consul]
         else:
             for service, stub in services.items():
-                self.uri[service] = monolithic_uri
+                self.uri[service] = '{}:{}'.format(FLAGS.monolithic_host, FLAGS.monolithic_port)
                 self.channel[service] = self._get_channel(service, stub)
 
     def refresh(self, service):
