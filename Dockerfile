@@ -4,6 +4,7 @@ RUN mkdir /app
 WORKDIR /app
 ADD . /app/
 
-RUN pip install -r requirements.txt
+RUN pip3 install poetry
+RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
 
-ENTRYPOINT gunicorn -b 0.0.0.0:$PORT "app:load('prod')" -- --flagfile=prod.flags
+ENTRYPOINT poetry run gunicorn -b 0.0.0.0:$PORT "app:load('prod')" -- --flagfile=prod.flags
