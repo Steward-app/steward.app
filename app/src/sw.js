@@ -1,6 +1,6 @@
 console.log('Hello from sw.js');
 
-import { registerRoute } from 'workbox-routing';
+import {registerRoute, setDefaultHandler, setCatchHandler} from 'workbox-routing';
 import {
   NetworkFirst,
   StaleWhileRevalidate,
@@ -8,33 +8,59 @@ import {
 } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import {ExpirationPlugin} from 'workbox-expiration';
+import { precacheAndRoute, matchPrecache } from 'workbox-precaching';
 
-if (registerRoute) {
-  console.log(`Yay! Workbox is loaded 🎉`);
+precacheAndRoute(self.__WB_MANIFEST);
 
-  registerRoute(
-    ({ request }) =>
-      request.destination === 'style' ||
-      request.destination === 'script' ||
-      request.destination === 'worker',
-    new StaleWhileRevalidate({
-      cacheName: 'static-resources',
-      plugins: [ new CacheableResponsePlugin({ statuses: [200] })]
-    }),
-  );
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: 'pages',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [200],
+      }),
+    ],
+  }),
+);
 
-  registerRoute(
-    /\.(?:png|gif|jpg|jpeg|svg|ico)$/,
-    new CacheFirst({
-      cacheName: 'images',
-      plugins: [
-        new ExpirationPlugin({
-          maxEntries: 60,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-        }),
-      ],
-    }),
-  );
-} else {
-  console.log(`Boo! Workbox didn't load 😬`);
-}
+registerRoute(
+  ({ request }) =>
+    request.destination === 'style' ||
+    request.destination === 'script' ||
+    request.destination === 'worker',
+  new StaleWhileRevalidate({
+    cacheName: 'static',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [200],
+      })
+    ]
+  }),
+);
+
+registerRoute(
+  ({ request }) => request.destination === 'image',
+  new CacheFirst({
+    cacheName: 'images',
+    plugins: [
+      new CacheableResponsePlugin({
+        statuses: [200],
+      }),
+      new ExpirationPlugin({
+        maxEntries: 50,
+        maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+      }),
+    ],
+  }),
+);
+
+// Catch routing errors, like if the user is offline
+setCatchHandler(async ({ event }) => {
+  // Return the precached offline page if a document is being requested
+  if (event.request.destination === 'document') {
+    return matchPrecache('/offline');
+  }
+
+  return Response.error();
+});

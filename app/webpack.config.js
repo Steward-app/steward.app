@@ -1,5 +1,6 @@
 const path = require('path');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const {InjectManifest} = require('workbox-webpack-plugin');
+
 
 module.exports = [
   {
@@ -7,6 +8,7 @@ module.exports = [
     output: {
       filename: 'app.js',
       path: path.resolve(__dirname, 'static'),
+      publicPath: 'static/',
     },
     module: {
       rules: [
@@ -15,7 +17,12 @@ module.exports = [
           use: ['style-loader', 'css-loader']
         }
       ]
-    }
+    },
+    plugins: [
+      new InjectManifest({
+        swSrc: './src/sw.js',
+      })
+    ],
   },
   {
     entry: './src/sw.js',

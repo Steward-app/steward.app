@@ -4,6 +4,7 @@ import parsleyjs from 'parsleyjs';
 import bootstrap from 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// register serviceWorker
 (function() {
   if('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -21,20 +22,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
     });
   }
 })();
-
-let deferredPrompt;
-const btnAdd = document.querySelector('#btnAdd');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('beforeinstallprompt event fired');
-  e.preventDefault();
-  deferredPrompt = e;
-  btnAdd.style.visibility = 'visible';
-});
-
-window.addEventListener('appinstalled', (evt) => {
-  app.logEvent('app', 'installed');
-});
 
 // register Parsley
 jquery('form').parsley({ successClass: 'is-valid', errorClass: 'is-invalid'});
