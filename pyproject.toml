@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "steward.app"
+version = "0.1.4"
+description = "Web frontend for Steward"
+authors = ["Artanicus <artanicus@nocturnal.fi>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+googleapis-common-protos = "^1.53.0"
+absl-py = "^0.12.0"
+protobuf = "^3.15.7"
+grpcio = "^1.36.1"
+gunicorn = "^20.1.0"
+email-validator = "^1.1.2"
+python-dotenv = "^0.17.0"
+sentry-sdk = {extras = ["flask"], version = "^1.0.0"}
+python-box = {extras = ["all"], version = "^5.3.0"}
+WTForms = "^2.3.3"
+WTForms-ParsleyJS = "^2.0.1"
+Flask-WTF = "^0.14.3"
+Flask-Login = "^0.5.0"
+Flask-Bcrypt = "^0.7.1"
+Flask-Mail = "^0.9.1"
+Flask-Static-Digest = "^0.2.1"
+Flask-Travis = "^0.0.2"
+jsmin = "^2.2.2"
+cssmin = "^0.2.0"
+
+[tool.poetry.dev-dependencies]
+bumpversion = "^0.6.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
