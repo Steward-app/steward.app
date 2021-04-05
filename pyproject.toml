@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "steward.app"
-version = "0.2.0"
+version = "0.2.1"
 description = "Web frontend for Steward"
 authors = ["Artanicus <artanicus@nocturnal.fi>"]
 license = "MIT"
@@ -25,7 +25,7 @@ Flask-Mail = "^0.9.1"
 Flask-Static-Digest = "^0.2.1"
 Flask-Travis = "^0.0.2"
 jsmin = "^2.2.2"
-cssmin = "^0.2.0"
+cssmin = "^0.2.1"
 
 [tool.poetry.dev-dependencies]
 bumpversion = "^0.6.0"
