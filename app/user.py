@@ -128,7 +128,7 @@ class WrappedUser(UserMixin):
             except grpc._channel._InactiveRpcError as e:
                 logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
                 global channel
-                channels.resolve_all()
+                channels.refresh_all()
                 channel = grpc.insecure_channel(channels.user)
                 users = registry_pb2_grpc.UserServiceStub(channel)
                 try:
