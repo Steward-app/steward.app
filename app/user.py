@@ -82,6 +82,8 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         # This is the very first call a backend may be handling so worth being careful
+        # Need to modify stub if we've lost the connection
+        global users
         try:
             target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
         except grpc._channel._InactiveRpcError as e:
