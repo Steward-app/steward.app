@@ -81,7 +81,20 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
+        # This is the very first call a backend may be handling so worth being careful
+        try:
+            target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
+        except grpc._channel._InactiveRpcError as e:
+            logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
+            global channel
+            channels.refresh_all()
+            channel = grpc.insecure_channel(channels.user)
+            users = registry_pb2_grpc.UserServiceStub(channel)
+            try:
+                target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
+            except grpc._channel._InactiveRpcError as e:
+                logging.error('Still had a stale channel, burning the house down')
+                shutdown_server()
         if target_user.password and bcrypt.check_password_hash(target_user.password, form.password.data):
             user = WrappedUser()
             user.load(target_user)
