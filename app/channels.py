@@ -25,7 +25,7 @@ class Channels():
         self.uri = Box()
         self.channel = Box()
         if FLAGS.consul:
-            logging.info('Using Consul host: {host}'.format(host=FLAGS.consul))
+            logging.info('Using Consul to resolve backends.')
             self.resolver = resolver.Resolver()
         else:
             for service, stub in services.items():
