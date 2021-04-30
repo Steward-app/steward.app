@@ -144,7 +144,7 @@ class WrappedUser(UserMixin):
                 logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
                 global channel
                 channels.refresh_all()
-                channel = grpc.insecure_channel(channels.user)
+                channel = grpc.insecure_channel(channels.channel['user'])
                 users = registry_pb2_grpc.UserServiceStub(channel)
                 try:
                     self.user = users.GetUser(u.User(_id=user_id))
