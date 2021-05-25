@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "steward.app"
-version = "0.3.2"
+version = "0.3.3"
 description = "Web frontend for Steward"
 authors = ["Artanicus <artanicus@nocturnal.fi>"]
 license = "MIT"
