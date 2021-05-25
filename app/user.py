@@ -152,7 +152,7 @@ class WrappedUser(UserMixin):
                 global channel
                 try:
                     channels.refresh_all()
-                    channel = grpc.insecure_channel(channels.channel['user'])
+                    channel = channels.channel.user
                     users = registry_pb2_grpc.UserServiceStub(channel)
                     self.user = users.GetUser(u.User(_id=user_id))
                 except grpc._channel._InactiveRpcError as e:
