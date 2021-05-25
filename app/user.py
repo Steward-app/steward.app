@@ -137,16 +137,18 @@ class WrappedUser(UserMixin):
         # Need to modify stub if we've lost the connection
         global users
         if user_id:
-            logging.debug('user created by id: {user_id}'.format(user_id=user_id))
+            logging.debug('user session creation by id: {user_id}'.format(user_id=user_id))
+            # Any registry fetch will always start with a user fetch,
+            # ergo we're extra careful validating registry connections on user fetches
             try:
                 self.user = users.GetUser(u.User(_id=user_id))
             except grpc._channel._InactiveRpcError as e:
                 logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
                 global channel
-                channels.refresh_all()
-                channel = grpc.insecure_channel(channels.channel['user'])
-                users = registry_pb2_grpc.UserServiceStub(channel)
                 try:
+                    channels.refresh_all()
+                    channel = grpc.insecure_channel(channels.channel['user'])
+                    users = registry_pb2_grpc.UserServiceStub(channel)
                     self.user = users.GetUser(u.User(_id=user_id))
                 except grpc._channel._InactiveRpcError as e:
                     logging.error('Still had a stale channel, burning the house down')
