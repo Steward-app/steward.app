@@ -18,10 +18,11 @@ import jaeger_client
 from flask_opentracing import FlaskTracing
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string('sentry', None, 'Sentry endpoint')
-flags.DEFINE_bool('jaeger', False, 'Enable Jaeger tracing')
+flags.DEFINE_string('sentry', None, 'Sentry endpoint. Only enabled if defined.')
 flags.DEFINE_bool('consul', False, 'Enable Consul discovery of services via DNS.')
-flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
+flags.DEFINE_bool('jaeger', False, 'Enable Jaeger tracing.')
+flags.DEFINE_string('jaeger_service', 'jaeger-agent', 'Consul service name for the Jaeger compact thrift agent, if --consul is used.')
+flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility.')
 
 
 # init channel resolutions in the global scope so they're available everywhere
@@ -37,7 +38,7 @@ def init_tracer():
     }
 
     if FLAGS.consul:
-        jaeger_host, jaeger_port = consul_resolve('jaeger').split(':')
+        jaeger_host, jaeger_port = consul_resolve(FLAGS.jaeger_service).split(':')
         logging.info(f'Sending Jaeger tracing to {jaeger_host}:{jaeger_port}')
         config['local_agent'] = {
                 'reporting_host': jaeger_host,
