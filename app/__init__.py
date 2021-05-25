@@ -18,7 +18,7 @@ from flask_opentracing import FlaskTracing
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string('sentry', None, 'Sentry endpoint')
-flags.DEFINE_bool('jaeger', None, 'Enable Jaeger tracing')
+flags.DEFINE_bool('jaeger', False, 'Enable Jaeger tracing')
 flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
 
 
@@ -62,15 +62,21 @@ def load(env):
             release = __version__
         )
 
-    global channels
-    channels = Channels()
-    channels.refresh_all()
 
     app = Flask(__name__)
     app.config.from_object('websiteconfig')
 
+    # gRPC channel init
+    global channels
     if FLAGS.jaeger:
-        tracing = FlaskTracing(init_tracer, True, app)
+        tracer = init_tracer()
+        flask_tracer = FlaskTracing(tracer, True, app)
+        logging.info('Flask tracing enabled')
+        channels = Channels(tracer)
+    else:
+        channels = Channels()
+    channels.refresh_all()
+
 
     lm.init_app(app)
     mail.init_app(app)

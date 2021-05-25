@@ -20,6 +20,12 @@ bp = Blueprint("user", __name__)
 logging.set_verbosity(logging.INFO)
 users = channels.channel.user
 
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
 @bp.route('/user/profile')
 @login_required
 def user_profile():
@@ -87,16 +93,15 @@ def login():
         try:
             target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
         except grpc._channel._InactiveRpcError as e:
-            logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
-            global channel
+            logging.warning(f'Instance had a stale channel: {channels.uri.user}, attempting to refresh')
             channels.refresh_all()
-            channel = grpc.insecure_channel(channels.user)
-            users = registry_pb2_grpc.UserServiceStub(channel)
+            users = channels.channel.user
             try:
                 target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
             except grpc._channel._InactiveRpcError as e:
                 logging.error('Still had a stale channel, burning the house down')
                 shutdown_server()
+                return 'No backend connection', 400
         if target_user.password and bcrypt.check_password_hash(target_user.password, form.password.data):
             user = WrappedUser()
             user.load(target_user)
@@ -143,7 +148,7 @@ class WrappedUser(UserMixin):
             try:
                 self.user = users.GetUser(u.User(_id=user_id))
             except grpc._channel._InactiveRpcError as e:
-                logging.warning('Instance had a stale channel: {channel}'.format(channel = channels.uri.user))
+                logging.warning(f'Instance had a stale channel: {channels.uri.user}')
                 global channel
                 try:
                     channels.refresh_all()

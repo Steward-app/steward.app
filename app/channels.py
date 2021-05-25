@@ -1,9 +1,14 @@
 from absl import logging, flags
 from dns import resolver
 from box import Box
+
 import grpc
 
+from grpc_opentracing import open_tracing_client_interceptor
+from grpc_opentracing.grpcext import intercept_channel
+
 from proto.steward import registry_pb2_grpc
+
 
 FLAGS = flags.FLAGS
 
@@ -19,8 +24,14 @@ services = {
         'schedule': registry_pb2_grpc.ScheduleServiceStub
         }
 
+
 class Channels():
-    def __init__(self):
+    def __init__(self, tracer=None):
+        # Init tracing if enabled
+        self.interceptor = None
+        if tracer:
+            logging.info('gRPC channel tracing enabled')
+            self.interceptor = open_tracing_client_interceptor(tracer)
         # not auto filled in, call refresh() or refresh_all()
         self.uri = Box()
         self.channel = Box()
@@ -58,4 +69,7 @@ class Channels():
 
     def _get_channel(self, service, stub):
         channel = grpc.insecure_channel(self.uri[service])
+        if self.interceptor:
+            logging.info(f'Tracing channel for {service}')
+            channel = intercept_channel(channel, self.interceptor)
         return stub(channel)
