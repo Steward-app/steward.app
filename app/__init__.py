@@ -9,6 +9,7 @@ from flask import Flask, render_template, flash, redirect, request, send_from_di
 from app.extensions import lm, mail, bcrypt, flask_static_digest
 
 from app.channels import Channels
+from app.resolver import consul_resolve
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -19,6 +20,7 @@ from flask_opentracing import FlaskTracing
 FLAGS = flags.FLAGS
 flags.DEFINE_string('sentry', None, 'Sentry endpoint')
 flags.DEFINE_bool('jaeger', False, 'Enable Jaeger tracing')
+flags.DEFINE_bool('consul', False, 'Enable Consul discovery of services via DNS.')
 flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
 
 
@@ -26,17 +28,23 @@ flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
 channels = None
 
 def init_tracer():
-    config = jaeger_client.Config(
-        config = {
-            'sampler': {
-                'type': 'const',
-                'param': 1,
-            },
-            'logging': True,
+    config = {
+        'sampler': {
+            'type': 'const',
+            'param': 1,
         },
-        service_name = 'steward.app'
-    )
-    return config.initialize_tracer()
+        'logging': True,
+    }
+
+    if FLAGS.consul:
+        jaeger_host, jaeger_port = consul_resolve('jaeger').split(':')
+        logging.info(f'Sending Jaeger tracing to {jaeger_host}:{jaeger_port}')
+        config['local_agent'] = {
+                'reporting_host': jaeger_host,
+                'reporting_port': jaeger_port,
+        }
+    config_obj = jaeger_client.Config(config, service_name = 'steward.app')
+    return config_obj.initialize_tracer()
 
 # This loader can be run with a wsgi runner and still receive an argument
 def load(env):
@@ -68,13 +76,15 @@ def load(env):
 
     # gRPC channel init
     global channels
+    kwargs = {}
+    if FLAGS.consul:
+        kwargs['consul'] = True
     if FLAGS.jaeger:
         tracer = init_tracer()
+        kwargs['tracer'] = tracer
         flask_tracer = FlaskTracing(tracer, True, app)
         logging.info('Flask tracing enabled')
-        channels = Channels(tracer)
-    else:
-        channels = Channels()
+    channels = Channels(**kwargs)
     channels.refresh_all()
 
 

@@ -1,5 +1,4 @@
 from absl import logging, flags
-from dns import resolver
 from box import Box
 
 import grpc
@@ -9,10 +8,11 @@ from grpc_opentracing.grpcext import intercept_channel
 
 from proto.steward import registry_pb2_grpc
 
+from app.resolver import consul_resolve
+
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_bool('consul', None, 'Enable Consul discovery of backends via DNS.')
 flags.DEFINE_string('consul_service', 'steward-registry', 'Consul service')
 flags.DEFINE_string('monolithic_host', 'localhost', 'Host to use for monolithic deployments')
 flags.DEFINE_integer('monolithic_port', 50050, 'Port to use for monolithic deployments')
@@ -26,26 +26,27 @@ services = {
 
 
 class Channels():
-    def __init__(self, tracer=None):
-        # Init tracing if enabled
+    def __init__(self, consul=False, tracer=None):
         self.interceptor = None
+
+        # Init tracing if enabled
         if tracer:
             logging.info('gRPC channel tracing enabled')
             self.interceptor = open_tracing_client_interceptor(tracer)
         # not auto filled in, call refresh() or refresh_all()
         self.uri = Box()
         self.channel = Box()
-        if FLAGS.consul:
+        if consul:
+            self.consul = True
             logging.info('Using Consul to resolve backends.')
-            self.resolver = resolver.Resolver()
         else:
             for service, stub in services.items():
                 self.uri[service] = '{}:{}'.format(FLAGS.monolithic_host, FLAGS.monolithic_port)
                 self.channel[service] = self._get_channel(service, stub)
 
     def refresh(self, service):
-        if FLAGS.consul:
-            self.uri[service] = self._resolve(service)
+        if self.consul:
+            self.uri[service] = self.registry_resolve(service)
             stub = services[service]
             self.channel[service] = self._get_channel(service, stub)
             logging.info('Resolved service {tag} to {uri}'.format(
@@ -54,16 +55,14 @@ class Channels():
             ))
 
     def refresh_all(self):
-        if FLAGS.consul:
+        if self.consul:
             for service in services:
                 self.refresh(service)
     
-    def _resolve(self, tag):
-        if FLAGS.consul:
-            address = 'registry.{tag}.{service}.service.consul.'.format(tag=tag, service=FLAGS.consul_service)
-            srv = self.resolver.resolve(address, 'SRV')[0]
-            ip = self.resolver.resolve(srv.target, 'A')[0]
-            return '{host}:{port}'.format(host=ip, port=srv.port)
+    def registry_resolve(self, tag):
+        if self.consul:
+            service = f'registry.{tag}.{FLAGS.consul_service}'
+            return consul_resolve(service)
         else:
             return self.monolithic
 
