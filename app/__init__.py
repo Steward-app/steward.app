@@ -13,13 +13,30 @@ from app.channels import Channels
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
+import jaeger_client
+from flask_opentracing import FlaskTracing
+
 FLAGS = flags.FLAGS
 flags.DEFINE_string('sentry', None, 'Sentry endpoint')
+flags.DEFINE_bool('jaeger', None, 'Enable Jaeger tracing')
 flags.DEFINE_string('b', None, 'Ignored for gunicorn compatibility')
 
 
 # init channel resolutions in the global scope so they're available everywhere
 channels = None
+
+def init_tracer():
+    config = jaeger_client.Config(
+        config = {
+            'sampler': {
+                'type': 'const',
+                'param': 1,
+            },
+            'logging': True,
+        },
+        service_name = 'steward.app'
+    )
+    return config.initialize_tracer()
 
 # This loader can be run with a wsgi runner and still receive an argument
 def load(env):
@@ -51,6 +68,9 @@ def load(env):
 
     app = Flask(__name__)
     app.config.from_object('websiteconfig')
+
+    if FLAGS.jaeger:
+        tracing = FlaskTracing(init_tracer, True, app)
 
     lm.init_app(app)
     mail.init_app(app)
