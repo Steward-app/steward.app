@@ -95,7 +95,10 @@ def login():
         except grpc._channel._InactiveRpcError as e:
             logging.warning(f'Instance had a stale channel: {channels.uri.user}, attempting to refresh')
             channels.refresh_all()
-            users = channels.channel.user
+            global channel
+            channel = channels.channel.user
+            users = registry_pb2_grpc.UserServiceStub(channel)
+            logging.info(f'Refreshed channel {channel} to point to {users}')
             try:
                 target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
             except grpc._channel._InactiveRpcError as e:
@@ -149,11 +152,12 @@ class WrappedUser(UserMixin):
                 self.user = users.GetUser(u.User(_id=user_id))
             except grpc._channel._InactiveRpcError as e:
                 logging.warning(f'Instance had a stale channel: {channels.uri.user}')
-                global channel
                 try:
                     channels.refresh_all()
+                    global channel
                     channel = channels.channel.user
                     users = registry_pb2_grpc.UserServiceStub(channel)
+                    logging.info(f'Refreshed channel {channel} to point to {users}')
                     self.user = users.GetUser(u.User(_id=user_id))
                 except grpc._channel._InactiveRpcError as e:
                     logging.error('Still had a stale channel, burning the house down')
