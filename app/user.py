@@ -20,11 +20,6 @@ bp = Blueprint("user", __name__)
 logging.set_verbosity(logging.INFO)
 users = channels.channel.user
 
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
 
 @bp.route('/user/profile')
 @login_required
@@ -87,25 +82,14 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        # This is the very first call a backend may be handling so worth being careful
-        # Need to modify stub if we've lost the connection
-        global users
         try:
-            target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
-        except grpc._channel._InactiveRpcError as e:
-            logging.warning(f'Instance had a stale channel: {channels.uri.user}, attempting to refresh')
-            channels.refresh_all()
-            global channel
-            channel = channels.channel.user
-            users = registry_pb2_grpc.UserServiceStub(channel)
-            logging.info(f'Refreshed channel {channel} to point to {users}')
-            try:
-                target_user = users.GetUser(u.GetUserRequest(email=form.email.data))
-            except grpc._channel._InactiveRpcError as e:
-                logging.error('Still had a stale channel, burning the house down')
-                shutdown_server()
-                return 'No backend connection', 400
+            target_user = _get_user(email=form.email.data)
+        except ConnectionError as e:
+            util.shutdown_server()
+            return 'No backend, please try again.', 400
+
         if target_user.password and bcrypt.check_password_hash(target_user.password, form.password.data):
+            # init the user empty and load deferred from the data we already have
             user = WrappedUser()
             user.load(target_user)
             login_user(user)
@@ -135,33 +119,20 @@ def logout():
 @lm.user_loader
 def load_user(user_id):
     if user_id:
-        user = WrappedUser(user_id)
+        try:
+            user = WrappedUser(user_id)
+        except ConnectionError as e:
+            util.shutdown_server()
+            return 'No backend, please try again.', 400
         return user
     else:
         logging.error('load_user called without valid id!')
 
 class WrappedUser(UserMixin):
     def __init__(self, user_id=None):
-        # Need to modify stub if we've lost the connection
-        global users
         if user_id:
             logging.debug('user session creation by id: {user_id}'.format(user_id=user_id))
-            # Any registry fetch will always start with a user fetch,
-            # ergo we're extra careful validating registry connections on user fetches
-            try:
-                self.user = users.GetUser(u.User(_id=user_id))
-            except grpc._channel._InactiveRpcError as e:
-                logging.warning(f'Instance had a stale channel: {channels.uri.user}')
-                try:
-                    channels.refresh_all()
-                    global channel
-                    channel = channels.channel.user
-                    users = registry_pb2_grpc.UserServiceStub(channel)
-                    logging.info(f'Refreshed channel {channel} to point to {users}')
-                    self.user = users.GetUser(u.User(_id=user_id))
-                except grpc._channel._InactiveRpcError as e:
-                    logging.error('Still had a stale channel, burning the house down')
-                    shutdown_server()
+            self.user = _get_user(_id=user_id)
         else:
             logging.debug('LazyLoading user')
             self.user = 'noneuser'
@@ -190,3 +161,17 @@ def user_submit(form, user_id=None):
         new_user = users.CreateUser(user)
     return redirect('/user/{}'.format(new_user._id))
 
+def _get_user(allow_retry=True, **kwargs):
+    global users
+    try: # Will fail if we have stale channels
+        user = users.GetUser(u.GetUserRequest(**kwargs))
+    except grpc._channel._InactiveRpcError as e:
+        logging.warning(f'Instance had a stale channel: {channels.uri.user}')
+        if allow_retry: # try again recursively if allowed
+            channels.refresh_all()
+            users = channels.channel.user
+            user = _get_user(allow_retry=False, **kwargs)
+        else:
+            logging.error(f'Instance had a stale channel: {channels.uri.user}, retry exhausted.')
+            raise ConnectionError(f'Stale channel, could not connect to {channels.uri.user}')
+    return user
